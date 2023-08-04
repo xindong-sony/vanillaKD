@@ -44,6 +44,7 @@ from timm.utils import *
 from timm.utils import ApexScaler, NativeScaler
 from utils import CheckpointSaverWithLogger, MultiSmoothingMixup, setup_default_logging, TimePredictor
 import models
+import change_teacher
 
 try:
     from apex import amp
@@ -417,7 +418,7 @@ def main():
     else:
         _logger.info(f'settings: ' + ', '.join(f"{k}={setting_dicts[0][k]}" for k in setting_dicts[0]))
 
-    if args.log_wandb:
+    if args.local_rank==0 and args.log_wandb:
         if has_wandb:
             wandb.init(project=args.experiment, config=args)
         else:
@@ -933,6 +934,7 @@ def train_one_epoch(
     last_idx = len(loader) - 1
     num_updates = epoch * len(loader)
     for batch_idx, (input, target) in enumerate(loader):
+        # print("batch_idx: ", batch_idx)
         last_batch = batch_idx == last_idx
         data_time_m.update(time.time() - end)
         if not args.prefetcher:
@@ -958,6 +960,8 @@ def train_one_epoch(
                 torch.cuda.empty_cache()
             with torch.no_grad():
                 output_t = teacher(teacher_input)
+
+                output_t = change_teacher.shuffle_except_max(output_t)
 
             if args.economic:
                 torch.cuda.empty_cache()
