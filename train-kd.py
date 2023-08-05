@@ -82,6 +82,7 @@ parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 
 # ---------------------------------------------------------------------------------------
 # KD parameters
+parser.add_argument("--change-teacher", type=int, default=0)
 parser.add_argument('--dkd-alpha', type=float, default=1)
 parser.add_argument('--dkd-beta', type=float, default=2)
 
@@ -961,7 +962,12 @@ def train_one_epoch(
             with torch.no_grad():
                 output_t = teacher(teacher_input)
 
-                output_t = change_teacher.shuffle_except_max(output_t)
+                if args.change_teacher == 0:
+                    pass
+                elif args.change_teacher == 1:
+                    output_t = change_teacher.shuffle_except_max(output_t)
+                else:
+                    raise NotImplementedError("not supported change_teacher: %d"%args.change_teacher)
 
             if args.economic:
                 torch.cuda.empty_cache()
