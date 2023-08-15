@@ -989,6 +989,9 @@ def train_one_epoch(
                 loss_ori = ori_loss_weight_list[i] * loss_fn_list[i](output, targets[i])
                 loss_kd = kd_loss_weight_list[i] * kd_loss_fn_list[i](z_s=output, z_t=output_t.detach(),
                                                                       target=targets[i])
+                if batch_idx==0:
+                    print("kd_loss_weight[%d]:"%i, kd_loss_weight_list[i])
+                    print("ori_loss_weight[%d]:"%i, ori_loss_weight_list[i])
                 loss = loss_ori + loss_kd
 
             if not args.distributed:
