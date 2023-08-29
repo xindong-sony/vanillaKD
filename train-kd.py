@@ -33,6 +33,7 @@ import yaml
 from torch.nn.parallel import DistributedDataParallel as NativeDDP
 from torchvision import transforms
 
+import data_reduce
 from losses import BinaryKLDiv, DIST, DKD, KLDiv
 from timm.data import AugMixDataset, create_dataset, create_loader, FastCollateMixup, resolve_data_config
 from timm.loss import *
@@ -82,6 +83,7 @@ parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 
 # ---------------------------------------------------------------------------------------
 # KD parameters
+parser.add_argument("--subset", type=int, default=0)
 parser.add_argument("--change-teacher", type=int, default=0)
 parser.add_argument('--dkd-alpha', type=float, default=1)
 parser.add_argument('--dkd-beta', type=float, default=2)
@@ -652,6 +654,17 @@ def main():
         download=args.dataset_download,
         batch_size=args.batch_size,
         repeats=args.epoch_repeats)
+
+    # print('dataset_train', type(dataset_train.parser))
+    # print('dataset_train', type(dataset_train.parser.samples))
+    # print('dataset_train', [dataset_train.parser.samples[i][1] for i in range(100000, 100010)])
+    # assert 1==0
+    if args.subset > 0:
+        dataset_train = data_reduce.get_subset(dataset_train, args.subset)
+        print('dataset_train', len(dataset_train))
+
+    # assert 1==0
+
     dataset_eval = create_dataset(
         args.dataset, root=args.data_dir, split=args.val_split, is_training=False,
         class_map=args.class_map,
